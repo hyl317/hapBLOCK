@@ -57,7 +57,7 @@ class ModifyHDF5Genotypes(object):
         assert(np.max(self.f["calldata/GT"]) == 1)
 
     def save_data(self, gt, ad, ref, alt, pos, 
-                  rec, samples, path, gp=[],
+                  rec, allfreq, samples, path, gp=[],
                   compression="gzip", ad_group=True, gt_type="int8"):
         """Create a new HDF5 File with Input Data.
         gt: Genotype data [l,k,2]
@@ -66,6 +66,7 @@ class ModifyHDF5Genotypes(object):
         alt: Alternate Allele [l]
         pos: Position  [l]
         m: Map position [l]
+        allfreq: allele frequency [l]
         samples: Sample IDs [k].
         Save genotype data as int8, readcount data as int16.
         ad_group: whether to save allele depth
@@ -85,6 +86,7 @@ class ModifyHDF5Genotypes(object):
             f_ref = f0.create_dataset("variants/REF", (l,), dtype=dt)
             f_alt = f0.create_dataset("variants/ALT", (l,), dtype=dt)
             f_pos = f0.create_dataset("variants/POS", (l,), dtype='int32')
+            f_af = f0.create_dataset('variants/AF_ALL', (l,), dtype='f')
             f_gt = f0.create_dataset("calldata/GT", (l, k, 2), dtype=gt_type, compression=compression)
             if len(gp)>0:
                 f_gp = f0.create_dataset("calldata/GP", (l, k, 3), dtype="f", compression=compression)     
@@ -97,6 +99,7 @@ class ModifyHDF5Genotypes(object):
             f_ref[:] = ref.astype("S1")
             f_alt[:] = alt.astype("S1")
             f_pos[:] = pos
+            f_af[:] = allfreq
             f_gt[:] = gt
             if len(gp)>0:
                 f_gp[:] = gp
@@ -176,9 +179,10 @@ class ModifyHDF5Genotypes(object):
             alt_new = f["variants/ALT"][survive]
         
         pos_new = f["variants/POS"][survive]
+        allfreq_new = f['variants/AF_ALL'][survive]
         
         ### Downsample where needed  
-        self.save_data(gt_new, ad_new, ref_new, alt_new, pos_new, r_map_new, 
+        self.save_data(gt_new, ad_new, ref_new, alt_new, pos_new, r_map_new, allfreq_new,
                        f["samples"], self.save_path, gp=gp,
                        ad_group=ad, gt_type=gt_type, compression=compression)
         

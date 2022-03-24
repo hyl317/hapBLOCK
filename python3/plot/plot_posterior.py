@@ -110,3 +110,24 @@ def get_map(path_h5= "./data/hdf5/1240k_v43/ch", ch=3,
     f = h5py.File(path_load, "r") # Load for Sanity Check. See below!
     m = f[col_map][:]
     return m
+
+def plot_posterior_full(basepath, start=-1, end=-1):
+    # I assume the two files, map.npy and posterior.npy, reside in basepath
+    r_map = np.load(f'{basepath}/map.npy', 'r')
+    r_map = 100*r_map # cM is more intuitive for me
+    post = np.load(f'{basepath}/posterior.npy', 'r')
+    _, l = post.shape
+    assert(len(r_map) == l) # sanity check
+
+    i = np.searchsorted(r_map, start) if start != -1 else 0
+    j = np.searchsorted(r_map, end) if end != -1 else -1
+
+    for k in range(1,5):
+        plt.plot(r_map[i:j], post[k, i:j], label=f'state {k}', linewidth=0.25, alpha=0.75)
+    plt.plot(r_map[i:j], 1-post[0, i:j], label='sum of IBD states', color='black', linewidth=0.6)
+    plt.xlabel('Genomic Position')
+    plt.ylabel('Posterior')
+    plt.legend(loc='upper right', fontsize='xx-small')
+    plt.savefig(f'{basepath}/posterior.png', dpi=300)
+    plt.clf()
+    

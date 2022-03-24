@@ -123,6 +123,7 @@ class LoadHDF5(LoadData):
     def get_haplo_prob(self, f, idx):
         """Get haploid ancestral probability for indivual [2,l]"""
         h1 = f["calldata/GT"][:,idx,:].T
+        print(h1[:,:10])
         m = np.max(f["calldata/GP"][:,idx,:], axis=1)
         m = np.minimum(m,  1 - self.min_error)
         h1 = (1 - h1) * m + h1 * (1 - m) # Probability of being ancestral

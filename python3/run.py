@@ -11,7 +11,6 @@ import pandas as pd
 import itertools as it
 from time import time
 import sys as sys
-sys.path.append("/n/groups/reich/hringbauer/git/hapBLOCK/python3/") 
 from main import HMM_Full  # To run the main plotting.
 from plot.plot_posterior import plot_posterior # to plot the posterior.
 from IO.h5_load import get_opp_homos_f
@@ -19,9 +18,9 @@ from IO.h5_load import get_opp_homos_f
 def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""], 
                    ch=2, folder_out="", output=False, prefix_out="", logfile=False,
                    l_model="hdf5", e_model="haploid_gl", h_model="FiveStateScaled", 
-                   t_model="standard", p_col="variants/AF_ALL", 
+                   t_model="standard", p_model="hapROH", p_col="variants/AF_ALL", 
                    ibd_in=1, ibd_out=10, ibd_jump=500, min_cm=2,
-                   cutoff_post=0.99, max_gap=0.0075):
+                   cutoff_post=0.99, max_gap=0.0075, save=0):
     """Run IBD for pair of Individuals.
     folder_in: hdf5 path up to chromosome.
     iids: List of IIDs to compare [length 2]
@@ -34,17 +33,20 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
     iids = np.array(iids) # For better props when indexing
     assert(len(iids)==2) # Sanity Check of Input IIDs
     h = HMM_Full(folder_in=folder_in, l_model=l_model, t_model=t_model, 
-                     e_model=e_model, h_model = h_model,
+                     e_model=e_model, h_model = h_model, p_model=p_model,
                      output=output, load=True)
     h.t_obj.set_params(ibd_in = ibd_in, ibd_out = ibd_out, ibd_jump = ibd_jump)
     h.l_obj.set_params(iids=iids, ch=ch, p_col=p_col)
-    h.p_obj.set_params(ch=ch, min_cm=min_cm, cutoff_post=cutoff_post, max_gap=max_gap)
+
+    if len(folder_out)>0:
+        folder_out = h.prepare_path(folder_out, iid=iids, ch=ch, prefix_out=prefix_out, logfile=logfile)    
+
+    h.p_obj.set_params(ch=ch, min_cm=min_cm, cutoff_post=cutoff_post, max_gap=max_gap, folder=folder_out, save=save)
     #post, r_vec, fwd, bwd, tot_ll = h.run_fwd_bwd()
     post, r_vec =  h.run_fwd_bwd(full=False)
     df_ibd, _, _ = h.p_obj.call_roh(r_vec, post)
     
     if len(folder_out)>0:
-        folder_out = h.prepare_path(folder_out, iid=iids, ch=ch, prefix_out=prefix_out, logfile=logfile)
         h.p_obj.save_output(df=df_ibd, save_folder=folder_out) # r_map=[], post=[]
     return df_ibd, post, r_vec
 
@@ -52,13 +54,13 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
 def prep_param_list_chrom(folder_in, iids = [], ch=3,
                     folder_out="", output=True, logfile=False, prefix_out="default/",
                     l_model="hdf5", e_model="haploid_gl", h_model="FiveStateScaled", 
-                    t_model="standard", p_col="variants/AF_ALL", ibd_in=1, ibd_out=1, ibd_jump=500, min_cm=2,
-                    cutoff_post=0.99, max_gap=0.0):
+                    t_model="standard", p_model="hapROH", p_col="variants/AF_ALL", ibd_in=1, ibd_out=1, ibd_jump=500, min_cm=2,
+                    cutoff_post=0.99, max_gap=0.0, save=0):
     """Prepare parameter lists for multirun of hapBLOCK_chrom. Ideal for multi-processing,
     as it gives a list of parameters - one for each iid pair."""
     params = [[folder_in, iid2, ch, folder_out, output, prefix_out, logfile, l_model, e_model,
-              h_model, t_model, p_col, ibd_in, ibd_out, ibd_jump, min_cm, cutoff_post, max_gap] for iid2 in iids]
-    assert(len(params[0])==18)
+              h_model, t_model, p_model, p_col, ibd_in, ibd_out, ibd_jump, min_cm, cutoff_post, max_gap, save] for iid2 in iids]
+    assert(len(params[0])==20)
     return params
 
 #################################################################################

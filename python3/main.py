@@ -69,6 +69,7 @@ class HMM_Full(object):
         htsl, p, r_vec, _ =  self.l_obj.load_all_data()
         e_mat = self.e_obj.give_emission_matrix(htsl, p)
         t_mat = self.t_obj.full_transition_matrix(r_vec, n=4, submat33=self.submat33)
+        print(f'dimension of transition matrix: {t_mat.shape}')
         
         if full:
             post, fwd, bwd, tot_ll = self.fwd_bwd(e_mat, t_mat, in_val = self.in_val, 
