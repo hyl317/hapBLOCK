@@ -97,28 +97,28 @@ def plot_fp_distribution(df_call_fp, fs = 14, fs_l = 12, bins = np.linspace(1, 3
     plt.show()
     
     
-def plot_posterior(basepath, start=-1, end=-1, prefix=""):
-    # I assume the two files, map.npy and posterior.npy, reside in basepath
-    r_map = np.load(f'{basepath}/map.npy', 'r')
-    r_map = 100*r_map # cM is more intuitive for me
-    post = np.load(f'{basepath}/posterior.npy', 'r')
-    _, l = post.shape
-    assert(len(r_map) == l) # sanity check
+# def plot_posterior(basepath, start=-1, end=-1, prefix=""):
+#     # I assume the two files, map.npy and posterior.npy, reside in basepath
+#     r_map = np.load(f'{basepath}/map.npy', 'r')
+#     r_map = 100*r_map # cM is more intuitive for me
+#     post = np.load(f'{basepath}/posterior.npy', 'r')
+#     _, l = post.shape
+#     assert(len(r_map) == l) # sanity check
 
-    i = np.searchsorted(r_map, start) if start != -1 else 0
-    j = np.searchsorted(r_map, end) if end != -1 else -1
+#     i = np.searchsorted(r_map, start) if start != -1 else 0
+#     j = np.searchsorted(r_map, end) if end != -1 else -1
 
-    for k in range(1,5):
-        plt.plot(r_map[i:j], post[k, i:j], label=f'state {k}', linewidth=0.25, alpha=0.75)
-    plt.plot(r_map[i:j], np.sum(post[1:5, i:j], axis=0), label='sum of IBD1 states', color='black', linewidth=0.75)
-    plt.plot(r_map[i:j], np.sum(post[5:7, i:j], axis=0), label='sum of IBD2 states', color='grey', linewidth=0.75)
-    plt.xlabel('Genomic Position')
-    plt.ylabel('Posterior')
-    plt.legend(loc='upper right', fontsize='xx-small')
-    if len(prefix) == 0:
-        plt.savefig(f'{basepath}/posterior.png', dpi=300)
-    else:
-        plt.savefig(f'{basepath}/posterior.{prefix}.png', dpi=300)
-    plt.clf()
+#     for k in range(1,5):
+#         plt.plot(r_map[i:j], post[k, i:j], label=f'state {k}', linewidth=0.25, alpha=0.75)
+#     plt.plot(r_map[i:j], np.sum(post[1:5, i:j], axis=0), label='sum of IBD1 states', color='black', linewidth=0.75)
+#     plt.plot(r_map[i:j], np.sum(post[5:7, i:j], axis=0), label='sum of IBD2 states', color='grey', linewidth=0.75)
+#     plt.xlabel('Genomic Position')
+#     plt.ylabel('Posterior')
+#     plt.legend(loc='upper right', fontsize='xx-small')
+#     if len(prefix) == 0:
+#         plt.savefig(f'{basepath}/posterior.png', dpi=300)
+#     else:
+#         plt.savefig(f'{basepath}/posterior.{prefix}.png', dpi=300)
+#     plt.clf()
     
 

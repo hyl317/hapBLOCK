@@ -17,8 +17,7 @@ from IO.h5_load import get_opp_homos_f
 
 def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""], 
                    ch=2, folder_out="", output=False, prefix_out="", logfile=False,
-                   l_model="hdf5", e_model="haploid_gl", h_model="FiveStateScaled", 
-                   t_model="standard", p_model="hapROH", p_col="variants/AF_ALL", 
+                   l_model="hdf5", IBD2=False, p_col="variants/AF_ALL", 
                    ibd_in=1, ibd_out=10, ibd_jump=500, min_cm=2,
                    cutoff_post=0.99, max_gap=0.0075, save=0):
     """Run IBD for pair of Individuals.
@@ -32,6 +31,12 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
     Return df_ibd, posterior, map, tot_ll"""
     iids = np.array(iids) # For better props when indexing
     assert(len(iids)==2) # Sanity Check of Input IIDs
+
+    e_model = "haploid_gl" if not IBD2 else "IBD2"
+    h_model = "FiveStateScaled" if not IBD2 else "SevenStateScaled"
+    t_model = "standard" if not IBD2 else "IBD2"
+    p_model = "hapROH" if not IBD2 else "IBD2"
+
     h = HMM_Full(folder_in=folder_in, l_model=l_model, t_model=t_model, 
                      e_model=e_model, h_model = h_model, p_model=p_model,
                      output=output, load=True)

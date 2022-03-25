@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np
 import h5py as h5py
+import statsmodels.api as sm
 
 from matplotlib import rcParams
 rcParams['font.family'] = 'sans-serif'   # Set the default
@@ -111,7 +112,7 @@ def get_map(path_h5= "./data/hdf5/1240k_v43/ch", ch=3,
     m = f[col_map][:]
     return m
 
-def plot_posterior_full(basepath, start=-1, end=-1):
+def plot_posterior_5States(basepath, start=-1, end=-1):
     # I assume the two files, map.npy and posterior.npy, reside in basepath
     r_map = np.load(f'{basepath}/map.npy', 'r')
     r_map = 100*r_map # cM is more intuitive for me
@@ -129,5 +130,38 @@ def plot_posterior_full(basepath, start=-1, end=-1):
     plt.ylabel('Posterior')
     plt.legend(loc='upper right', fontsize='xx-small')
     plt.savefig(f'{basepath}/posterior.png', dpi=300)
+    plt.clf()
+    
+def plot_posterior_7States(basepath, start=-1, end=-1, prefix="", simplify=True, smooth=False, alpha=1000):
+    # I assume the two files, map.npy and posterior.npy, reside in basepath
+    r_map = np.load(f'{basepath}/map.npy', 'r')
+    r_map = 100*r_map # cM is more intuitive for me
+    post = np.load(f'{basepath}/posterior.npy', 'r')
+    _, l = post.shape
+    assert(len(r_map) == l) # sanity check
+
+    i = np.searchsorted(r_map, start) if start != -1 else 0
+    j = np.searchsorted(r_map, end) if end != -1 else -1
+
+    if not simplify:
+        for k in range(1,5):
+            plt.plot(r_map[i:j], post[k, i:j], label=f'state {k}', linewidth=0.25, alpha=0.75)
+    plt.plot(r_map[i:j], np.sum(post[1:5, i:j], axis=0), label='sum of IBD1 states', color='black', linewidth=0.75)
+    plt.plot(r_map[i:j], np.sum(post[5:7, i:j], axis=0), label='sum of IBD2 states', color='grey', linewidth=0.75)
+
+    if smooth:
+        _, trend = sm.tsa.filters.hpfilter(np.sum(post[1:5, :], axis=0), alpha)
+        plt.plot(r_map[i:j], trend[i:j], label='smoothed sum of IBD1 states', color='blue')
+        _, trend = sm.tsa.filters.hpfilter(np.sum(post[5:7, :], axis=0), alpha)
+        plt.plot(r_map[i:j], trend[i:j], label='smoothed sum of IBD2 states', color='red')
+
+
+    plt.xlabel('Genomic Position')
+    plt.ylabel('Posterior')
+    plt.legend(loc='upper right', fontsize='xx-small')
+    if len(prefix) == 0:
+        plt.savefig(f'{basepath}/posterior.png', dpi=300)
+    else:
+        plt.savefig(f'{basepath}/posterior.{prefix}.png', dpi=300)
     plt.clf()
     
