@@ -620,21 +620,12 @@ def fwd_bkwd_scaled_7States(double[:, :] e_mat, double[:, :, :] t_mat,
     #############################
     ### Do the Forward Algorithm
     for i in range(1, n_loci):  # Run forward recursion
-
-        #for k in range(1, n_states): # Calculate Sum of ROH states. 
-        f_l = 1 - fwd[0, i-1]  ### Assume they are normalized!!!
+      set2zero(temp_v, n_states)
+      for j in range(n_states):
+        for k in range(n_states):
+          temp_v[j] += fwd[k, i-1]*t[i, k, j]
+        temp_v[j] *= e_mat[j, i]
         
-        ### Do the 0 State:
-        x1 = fwd[0, i - 1] * t[i, 0, 0]    # Staying in 0 State
-        # because the rate of jumping to 0 state from either IBD1 or IBD2 state are the same, the following line doesn't need to be changed
-        x2 = f_l * t[i, 1, 0]               # Going into 0 State from any other
-        temp_v[0] = e_mat[0, i] * (x1 + x2) # Set the unnorm. 0 forward variable
-
-        ### Do the other states
-        for j in range(1, n_states):  # Do the final run over all states
-          elementwise_multiple(fwd[:, i-1], t[i, :, j], temp2_v, n_states) # coming from 0 and other states
-          temp_v[j] = e_mat[j, i] * sum_array(temp2_v, n_states)
-            
         ### Do the normalization
         c_view[i] = sum_array(temp_v, n_states)
         for j in range(n_states):

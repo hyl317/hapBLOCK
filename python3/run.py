@@ -5,11 +5,13 @@ with all relevant keywords.
 @Author: Harald Ringbauer, 2020
 """
 
+from hypothesis import assume
 import numpy as np
 import multiprocessing as mp
 import pandas as pd
 import itertools as it
 from time import time
+import os
 import sys as sys
 from main import HMM_Full  # To run the main plotting.
 from plot.plot_posterior import plot_posterior # to plot the posterior.
@@ -54,6 +56,50 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
     if len(folder_out)>0:
         h.p_obj.save_output(df=df_ibd, save_folder=folder_out) # r_map=[], post=[]
     return df_ibd, post, r_vec
+
+
+def multi_run(fun, prms, processes = 4, output=False):
+    """Implementation of running in Parallel.
+    fun: Function
+    prms: The Parameter Files
+    processes: How many Processes to use"""
+    if output:
+        print(f"Running {len(prms)} total jobs; {processes} in parallel.")
+    
+    if len(prms)>1:
+        if output:
+            print("Starting Pool of multiple workers...")    
+        with mp.Pool(processes = processes) as pool:
+            results = pool.starmap(fun, prms)
+    elif len(prms)==1:
+        if output:
+            print("Running single process...")
+        results = fun(*prms[0])
+    else:
+        raise RuntimeWarning("Nothing to run! Please check input.")
+    return results
+
+
+def hapBLOCK_pair(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""], 
+                   chs=range(1,23), folder_out="", output=False, prefix_out="", logfile=False,
+                   l_model="hdf5", IBD2=False, p_col="variants/AF_ALL", 
+                   ibd_in=1, ibd_out=10, ibd_jump=500, min_cm=2,
+                   cutoff_post=0.99, max_gap=0.0075, save=0):
+    # running time on each chromosome is minimal, so I don't think there is any need to parallelize across chromosomes.
+    # it makes more sense to only parallize across pairs
+    assert(len(iids) == 2)
+    dfs = []
+    for ch in chs:
+        df, *_ = hapBLOCK_chrom(folder_in, iids, ch, folder_out, output, prefix_out, logfile, l_model, IBD2, p_col, ibd_in, ibd_out, ibd_jump, min_cm, cutoff_post, max_gap, save)
+        dfs.append(df)
+    path_ibd = os.path.join(folder_out, f"{iids[0]}_{iids[1]}_ibd.tsv")
+    df = pd.concat(dfs, ignore_index=True)
+    df.to_csv(path_ibd, sep="\t", index=False)
+    IBD_total_length = 100*np.sum(df[df['segment_type']=='IBD1']['lengthM'])
+    IBD2_length = 100*np.sum(df[df['segment_type']=='IBD2']['lengthM'])
+    print(f'IBD1+IBD2 region total length: {IBD_total_length:.3f}')
+    print(f'IBD2 region total length: {IBD2_length:.3f}')
+
 
 
 def prep_param_list_chrom(folder_in, iids = [], ch=3,

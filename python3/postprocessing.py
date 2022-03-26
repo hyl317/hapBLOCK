@@ -183,7 +183,7 @@ class IBD2Postprocessing(PostProcessing):
         return df
 
     def get_posterior(self, post0):
-        ibd1 = np.sum(post0[1:5, :], axis=0)
+        ibd1 = np.sum(post0[1:, :], axis=0)
         ibd2 = np.sum(post0[5:, :], axis=0)
         return ibd1, ibd2
 
@@ -214,16 +214,16 @@ class IBD2Postprocessing(PostProcessing):
         starts_map_ibd1 = r_map[starts_ibd1]
         l_map_ibd1 = ends_map_ibd1 - starts_map_ibd1
         # Create hapROH Dataframe
-        df = self.create_df(starts_ibd1, ends_ibd1, starts_map_ibd1, ends_map_ibd1, 
+        df1 = self.create_df(starts_ibd1, ends_ibd1, starts_map_ibd1, ends_map_ibd1, 
                             l_ibd1, l_map_ibd1, self.ch, min_cm=self.min_cm,
                             iid1=iid1, iid2=iid2, segment_type='IBD1')
         if self.output:
-            print(f"Called n={len(df)} IBD1 Blocks > {self.min_cm} cM")
-            l = np.max(df["lengthM"])
+            print(f"Called n={len(df1)} IBD1 Blocks > {self.min_cm} cM")
+            l = np.max(df1["lengthM"])
             print(f"Longest Block: {l *100:.2f} cM")
         # Merge Blocks in Postprocessing Step
         if self.max_gap>0:
-            df = self.merge_called_blocks(df)
+            df1 = self.merge_called_blocks(df1)
 
     ########################### Writing IBD2 blocks to pandas dataframe ###############################
         starts_ibd2, ends_ibd2 = self.ibd_stat_to_block(ibd2)
@@ -231,15 +231,19 @@ class IBD2Postprocessing(PostProcessing):
         ends_map_ibd2 = r_map[ends_ibd2 - 1]  # -1 to stay within bounds
         starts_map_ibd2 = r_map[starts_ibd2]
         l_map_ibd2 = ends_map_ibd2 - starts_map_ibd2
-        df_tmp = self.create_df(starts_ibd2, ends_ibd2, starts_map_ibd2, ends_map_ibd2, 
+        df2 = self.create_df(starts_ibd2, ends_ibd2, starts_map_ibd2, ends_map_ibd2, 
                             l_ibd2, l_map_ibd2, self.ch, min_cm=self.min_cm,
                             iid1=iid1, iid2=iid2, segment_type='IBD2')
+        if self.output:
+            print(f"Called n={len(df2)} IBD2 Blocks > {self.min_cm} cM")
+            l = np.max(df2["lengthM"])
+            print(f"Longest Block: {l *100:.2f} cM")
         # Merge Blocks in Postprocessing Step
         if self.max_gap>0:
-            df = self.merge_called_blocks(df_tmp)
+            df2 = self.merge_called_blocks(df2)
 
-    # merge IBD2 blocks to the same dataframe as IBD1 blocks
-        df.append(df_tmp, ignore_index=True)
+        # merge IBD2 blocks to the same dataframe as IBD1 blocks
+        df = pd.concat((df1, df2), ignore_index=True)
 
         if self.save==1:
             self.save_output(df)
