@@ -16,7 +16,8 @@ class PostProcessing(object):
     Has Methods to save the output. Saves using standard hapROH format"""
     folder = ""          # The Folder to operate in.
     cutoff_post = 0.99    # Cutoff Probability for ROH State
-    min_cm = 4      # Cutoff of block length [in cM]
+    min_cm1 = 6      # Cutoff of block length [in cM]
+    min_cm2 = 2
     max_gap = 0.01  # The Maximum Gap Length to be Merged [in Morgan]
     save = 0        # What to save. 0: Nothing 1: Save post-processed IBD. 2: Save 0-posterior. 3: Save full posterior
     output = True   # Whether to plot output
@@ -142,7 +143,7 @@ class PostProcessing(object):
 
         # Create hapROH Dataframe
         df = self.create_df(starts, ends, starts_map, ends_map, 
-                            l, l_map, self.ch, min_cm=self.min_cm,
+                            l, l_map, self.ch, min_cm1=self.min_cm1,
                             iid1=iid1, iid2=iid2)
 
         # Merge Blocks in Postprocessing Step
@@ -150,7 +151,7 @@ class PostProcessing(object):
             df = self.merge_called_blocks(df)
 
         if self.output:
-            print(f"Called n={len(df)} IBD Blocks > {self.min_cm} cM")
+            print(f"Called n={len(df)} IBD Blocks > {self.min_cm1} cM")
             l = np.max(df["lengthM"])
             print(f"Longest Block: {l *100:.2f} cM")
 
@@ -215,10 +216,10 @@ class IBD2Postprocessing(PostProcessing):
         l_map_ibd1 = ends_map_ibd1 - starts_map_ibd1
         # Create hapROH Dataframe
         df1 = self.create_df(starts_ibd1, ends_ibd1, starts_map_ibd1, ends_map_ibd1, 
-                            l_ibd1, l_map_ibd1, self.ch, min_cm=self.min_cm,
+                            l_ibd1, l_map_ibd1, self.ch, min_cm=self.min_cm1,
                             iid1=iid1, iid2=iid2, segment_type='IBD1')
         if self.output:
-            print(f"Called n={len(df1)} IBD1 Blocks > {self.min_cm} cM")
+            print(f"Called n={len(df1)} IBD1 Blocks > {self.min_cm1} cM")
             l = np.max(df1["lengthM"])
             print(f"Longest Block: {l *100:.2f} cM")
         # Merge Blocks in Postprocessing Step
@@ -232,10 +233,10 @@ class IBD2Postprocessing(PostProcessing):
         starts_map_ibd2 = r_map[starts_ibd2]
         l_map_ibd2 = ends_map_ibd2 - starts_map_ibd2
         df2 = self.create_df(starts_ibd2, ends_ibd2, starts_map_ibd2, ends_map_ibd2, 
-                            l_ibd2, l_map_ibd2, self.ch, min_cm=self.min_cm,
+                            l_ibd2, l_map_ibd2, self.ch, min_cm=self.min_cm2,
                             iid1=iid1, iid2=iid2, segment_type='IBD2')
         if self.output:
-            print(f"Called n={len(df2)} IBD2 Blocks > {self.min_cm} cM")
+            print(f"Called n={len(df2)} IBD2 Blocks > {self.min_cm2} cM")
             l = np.max(df2["lengthM"])
             print(f"Longest Block: {l *100:.2f} cM")
         # Merge Blocks in Postprocessing Step

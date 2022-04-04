@@ -12,7 +12,8 @@ import pandas as pd
 import itertools as it
 from time import time
 import os
-import sys as sys
+import sys
+import h5py
 from main import HMM_Full  # To run the main plotting.
 from plot.plot_posterior import plot_posterior # to plot the posterior.
 from IO.h5_load import get_opp_homos_f
@@ -20,7 +21,7 @@ from IO.h5_load import get_opp_homos_f
 def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""], 
                    ch=2, folder_out="", output=False, prefix_out="", logfile=False,
                    l_model="hdf5", IBD2=False, p_col="variants/AF_ALL", 
-                   ibd_in=1, ibd_out=10, ibd_jump=500, min_cm=2,
+                   ibd_in=1, ibd_out=10, ibd_jump=500, min_cm1=6, min_cm2=2,
                    cutoff_post=0.99, max_gap=0.0075, save=0):
     """Run IBD for pair of Individuals.
     folder_in: hdf5 path up to chromosome.
@@ -48,7 +49,7 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
     if len(folder_out)>0:
         folder_out = h.prepare_path(folder_out, iid=iids, ch=ch, prefix_out=prefix_out, logfile=logfile)    
 
-    h.p_obj.set_params(ch=ch, min_cm=min_cm, cutoff_post=cutoff_post, max_gap=max_gap, folder=folder_out, save=save)
+    h.p_obj.set_params(ch=ch, min_cm1=min_cm1, min_cm2=min_cm2, cutoff_post=cutoff_post, max_gap=max_gap, folder=folder_out, save=save)
     #post, r_vec, fwd, bwd, tot_ll = h.run_fwd_bwd()
     post, r_vec =  h.run_fwd_bwd(full=False)
     df_ibd, _, _ = h.p_obj.call_roh(r_vec, post)
@@ -83,22 +84,54 @@ def multi_run(fun, prms, processes = 4, output=False):
 def hapBLOCK_pair(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""], 
                    chs=range(1,23), folder_out="", output=False, prefix_out="", logfile=False,
                    l_model="hdf5", IBD2=False, p_col="variants/AF_ALL", 
-                   ibd_in=1, ibd_out=10, ibd_jump=500, min_cm=2,
+                   ibd_in=1, ibd_out=10, ibd_jump=500, min_cm1=6, min_cm2=2, 
                    cutoff_post=0.99, max_gap=0.0075, save=0):
     # running time on each chromosome is minimal, so I don't think there is any need to parallelize across chromosomes.
     # it makes more sense to only parallize across pairs
     assert(len(iids) == 2)
     dfs = []
     for ch in chs:
-        df, *_ = hapBLOCK_chrom(folder_in, iids, ch, folder_out, output, prefix_out, logfile, l_model, IBD2, p_col, ibd_in, ibd_out, ibd_jump, min_cm, cutoff_post, max_gap, save)
+        df, *_ = hapBLOCK_chrom(folder_in, iids, ch, folder_out, output, prefix_out, logfile, l_model, IBD2, p_col, ibd_in, ibd_out, ibd_jump, min_cm1, min_cm2, cutoff_post, max_gap, save)
         dfs.append(df)
     path_ibd = os.path.join(folder_out, f"{iids[0]}_{iids[1]}_ibd.tsv")
     df = pd.concat(dfs, ignore_index=True)
     df.to_csv(path_ibd, sep="\t", index=False)
-    IBD_total_length = 100*np.sum(df[df['segment_type']=='IBD1']['lengthM'])
-    IBD2_length = 100*np.sum(df[df['segment_type']=='IBD2']['lengthM'])
-    print(f'IBD1+IBD2 region total length: {IBD_total_length:.3f}')
-    print(f'IBD2 region total length: {IBD2_length:.3f}')
+    if IBD2:
+        IBD_total_length = 100*np.sum(df[df['segment_type']=='IBD1']['lengthM'])
+        IBD2_length = 100*np.sum(df[df['segment_type']=='IBD2']['lengthM'])
+        print(f'IBD1+IBD2 region total length: {IBD_total_length:.3f}')
+        print(f'IBD2 region total length: {IBD2_length:.3f}')
+        return IBD_total_length, IBD2_length
+    else:
+        IBD_total_length = 100*np.sum(df['lengthM'])
+        print(f'total length of IBD: {IBD_total_length}')
+        return IBD_total_length
+
+def hapBLOCK_all(folder_in=None, iids=[], chs=range(1,23), folder_out="", output=False, prefix_out="", logfile=False,
+                    l_model='hdf5', IBD2=True, p_col='variants/AF_ALL', ibd_in=1, ibd_out=10, ibd_jump=500, min_cm1=6, min_cm2=2,
+                    cutoff_post=0.99, max_gap=0.0075, save=3, nprocesses=4):
+    """
+    Run hapBLOCK on all pairs listed in $iids. If $iids is empty, then run hapBLOCK on all pairs in the hdf5 input.
+    """
+    if len(iids) == 0:
+        with h5py.File(f'{folder_in}1.h5', 'r') as f:
+            print(f['samples'])
+            iids = f['samples'][:].astype('str')
+    
+    iids_dedup = set(iids)
+    if len(iids_dedup) != len(iids): # Check whether duplicates
+        raise RuntimeWarning("Duplicate IIDs detected!")
+    print(f'Run hapBLOCK on {len(iids_dedup)} samples...')
+    
+    prms = [ [folder_in, [id1, id2], 
+                   chs, os.path.join(folder_out, f'{min(id1, id2)}_{max(id1, id2)}'),
+                    output, prefix_out, logfile,
+                   l_model, IBD2, p_col, 
+                   ibd_in, ibd_out, ibd_jump, min_cm1, min_cm2, 
+                   cutoff_post, max_gap, save] for id1, id2 in it.combinations(iids_dedup, 2)]
+    
+    # now running everything in parallel
+    multi_run(hapBLOCK_pair, prms, processes=nprocesses)
 
 
 

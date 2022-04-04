@@ -172,9 +172,10 @@ class SevenStateTransitions(FiveStateTransitions):
         submat33: Whether to only fill in the first 3 states """
         t_mat = -np.ones((7, 7))
 
-        t_mat[1:, 0] = self.ibd_out  # The rate of jumping out roh
-        t_mat[0, 1:5] = self.ibd_in / 4  # Jumping into any IBD1 State
-        t_mat[0, 5:7] = self.ibd_in / 2 # jumping into any IBD2 state
+        t_mat[1:5, 0] = self.ibd_out  # The rate of jumping out IBD1 to nonIBD
+        t_mat[5:7, 0] = 1e-6 # the rate of jumping out IBD2 to nonIBD
+        t_mat[0, 1:5] = self.ibd_in / 4  # Jumping into any IBD1 State from IBD0
+        t_mat[0, 5:7] = 1e-6 # jumping into any IBD2 state from IBD0
         t_mat[1:5, 1:5] = self.ibd_jump / 4  # Jumping between IBD1 State
         t_mat[5:7, 5:7] = self.ibd_jump / 2  # Jumping between IBD2 State
         t_mat[1:5, 5:7] = self.ibd_out / 2 # jumping from IBD1 to IBD2 State
