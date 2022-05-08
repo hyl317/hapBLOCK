@@ -188,6 +188,7 @@ def plot_posterior_7States_plusGeno(basepath, start=-1, end=-1, iids=[], path2hd
     map = 100*map
     i = np.searchsorted(map, start) if start != -1 else 0
     j = np.searchsorted(map, end) if end != -1 else -1
+    plt.scatter(map[i:j], [-0.05]*(j-i), marker='o', color='indigo', s=0.5, alpha=0.3) # to get a sense of the density of markers
     gt1, gt2, map = gt1[i:j], gt2[i:j], map[i:j]
     diff_gts = (gt1 != gt2)
     plt.scatter(map[diff_gts], [1.05]*np.sum(diff_gts), marker='o', color='blue', label='Diff. Genotypes', s=0.5, alpha=0.3)
@@ -201,6 +202,8 @@ def plot_posterior_7States_plusGeno(basepath, start=-1, end=-1, iids=[], path2hd
     plt.legend(loc='upper right', fontsize='xx-small')
     if len(prefix) == 0:
         plt.savefig(f'{basepath}/posterior.png', dpi=300)
+        plt.savefig(f'{basepath}/posterior.pdf', dpi=300)
     else:
         plt.savefig(f'{basepath}/posterior.{prefix}.png', dpi=300)
+        plt.savefig(f'{basepath}/posterior.{prefix}.pdf', dpi=300)
     plt.clf()

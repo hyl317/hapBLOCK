@@ -137,7 +137,7 @@ class HMM_Full(object):
         prefix_out: Optional additonal folder.
         logfile: Whether to pipe output to log-file [Warning: it is a hack]"""  
         if isinstance(iid, (list, np.ndarray)):
-            iid = "_".join(iid) # If multiple individual names given (for X IBD)
+            iid = "_".join(np.sort(iid)) # If multiple individual names given (for X IBD)
         path_out = os.path.join(base_path, iid, "chr" + str(ch), prefix_out, "")
         if not os.path.exists(path_out):
                 os.makedirs(path_out)

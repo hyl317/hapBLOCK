@@ -19,6 +19,7 @@ class PostProcessing(object):
     min_cm1 = 6      # Cutoff of block length [in cM]
     min_cm2 = 2
     max_gap = 0.01  # The Maximum Gap Length to be Merged [in Morgan]
+    snp_gap = 0.0 # the maximum gap between two consecutive SNPs [in Morgan]
     save = 0        # What to save. 0: Nothing 1: Save post-processed IBD. 2: Save 0-posterior. 3: Save full posterior
     output = True   # Whether to plot output
     ch = 3            # Chromosome to analyze
@@ -44,7 +45,7 @@ class PostProcessing(object):
         roh_post = 1 - posterior0
         return roh_post
     
-    def ibd_stat_to_block(self, ibd):
+    def ibd_stat_to_block(self, ibd, r_map):
         """Convert IBD status per marker
         into list of ibd.
         Input: IBD stats [l] boolean.
@@ -53,6 +54,20 @@ class PostProcessing(object):
         d = np.diff(x1)
         starts = np.where(d == 1)[0]
         ends = np.where(d == -1)[0]
+        
+        if self.snp_gap > 0:
+            assert(len(ibd) == len(r_map))
+            gap = np.diff(r_map)
+            assert(np.min(gap) >= 0)
+            big_gap_loc = np.where(gap > self.snp_gap)[0]
+            isIBD = np.where(ibd == 1)[0]
+            big_gap_loc = big_gap_loc[np.logical_and(np.isin(big_gap_loc, isIBD), np.isin(big_gap_loc + 1, isIBD))] # the span of the two locus is in IBD state
+            if len(big_gap_loc) > 0:
+                print(f'found large gaps in IBD region in ch{self.ch}')
+                print(big_gap_loc)
+                starts = np.sort(np.append(starts, 1 + big_gap_loc))
+                ends = np.sort(np.append(ends, big_gap_loc))
+
         return starts, ends
     
     def create_df(self, starts, ends, starts_map, ends_map, 
@@ -135,7 +150,7 @@ class PostProcessing(object):
             print(f"Fraction Markers above IBD cutoff: {frac_ibd:.4f}")
 
         # Identify Stretches by difference (up and down)
-        starts, ends = self.ibd_stat_to_block(ibd)
+        starts, ends = self.ibd_stat_to_block(ibd, r_map)
         l = ends - starts
         ends_map = r_map[ends - 1]  # -1 to stay within bounds
         starts_map = r_map[starts]
@@ -143,7 +158,7 @@ class PostProcessing(object):
 
         # Create hapROH Dataframe
         df = self.create_df(starts, ends, starts_map, ends_map, 
-                            l, l_map, self.ch, min_cm1=self.min_cm1,
+                            l, l_map, self.ch, min_cm=self.min_cm1,
                             iid1=iid1, iid2=iid2)
 
         # Merge Blocks in Postprocessing Step
@@ -209,7 +224,7 @@ class IBD2Postprocessing(PostProcessing):
 
     ############################ Writing IBD1 blocks to pandas dataframe ############################
         # Identify Stretches by difference (up and down)
-        starts_ibd1, ends_ibd1 = self.ibd_stat_to_block(ibd1)
+        starts_ibd1, ends_ibd1 = self.ibd_stat_to_block(ibd1, r_map)
         l_ibd1 = ends_ibd1 - starts_ibd1
         ends_map_ibd1 = r_map[ends_ibd1 - 1]  # -1 to stay within bounds
         starts_map_ibd1 = r_map[starts_ibd1]
@@ -227,7 +242,7 @@ class IBD2Postprocessing(PostProcessing):
             df1 = self.merge_called_blocks(df1)
 
     ########################### Writing IBD2 blocks to pandas dataframe ###############################
-        starts_ibd2, ends_ibd2 = self.ibd_stat_to_block(ibd2)
+        starts_ibd2, ends_ibd2 = self.ibd_stat_to_block(ibd2, r_map)
         l_ibd2 = ends_ibd2 - starts_ibd2
         ends_map_ibd2 = r_map[ends_ibd2 - 1]  # -1 to stay within bounds
         starts_map_ibd2 = r_map[starts_ibd2]
