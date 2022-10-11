@@ -7,8 +7,12 @@ sys.path.insert(0, "/n/groups/reich/hringbauer/git/hapBLOCK/python3/prepare")  #
 from prepare_h5 import vcf_to_1240K_hdf
 
 #####################################################
-### Run the Main Loop
-    
+### Set Version. Manually make sure that Folders exist (some need creation)
+vrs = "51.1"
+v0 = vrs.split(".")[0]
+
+#####################################################
+### Run the Main Program
     
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -19,12 +23,12 @@ if __name__ == "__main__":
     
     ## Run the Script
     ### Set Script Parameters
-    base_path = f"/n/groups/reich/hringbauer/git/hapBLOCK"
-    in_vcf_path = f"/n/groups/reich/ali/WholeGenomeImputation/imputed/v46.2/chr{ch}.bcf"
-    path_vcf = f"{base_path}/data/vcf/1240k_v46.2/ch{ch}.vcf.gz"
-    path_h5 = f"{base_path}/data/hdf5/1240k_v46.2/ch{ch}.h5"
+    base_path = f"/n/groups/reich/hringbauer/git/hapBLOCK"    
+    in_vcf_path = f"/n/data1/hms/genetics/reich/1000Genomes/ali/WholeGenomeImputation/imputed_r2/v{vrs}/chr{ch}.bcf"
+    path_vcf = f"{base_path}/data/vcf/1240k_v{vrs}/ch{ch}.vcf.gz"
+    path_h5 = f"{base_path}/data/hdf5/1240k_v{vrs}/ch{ch}.h5"
     marker_path = f"{base_path}/data/filters/1240K_1000G/snps_bcftools_ch{ch}.csv"
-    map_path = f"/n/groups/reich/DAVID/V46/V46.2/v46.2.snp"
+    map_path = f"/n/groups/reich/DAVID/V{v0}/V{vrs}/1240k/v{vrs}_1240k.snp"
     
     ### Actual Run.
     vcf_to_1240K_hdf(in_vcf_path = in_vcf_path,
@@ -32,6 +36,7 @@ if __name__ == "__main__":
                      path_h5 = path_h5,
                      marker_path = marker_path,
                      map_path = map_path,
+                     buffer_size=20000, chunk_width=8, chunk_length=20000,
                      ch=ch)
 
-    print(f"Finished running chromosome {ch}")
+    print(f"Finished processing chromosome: {ch}")

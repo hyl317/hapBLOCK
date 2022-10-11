@@ -2,7 +2,7 @@
 Class for calculating Transition Probabilities, i.e. 
 infitesimal transition Matrices.
 Contains Sub-Classes, as well as factory Method.
-@ Author: Harald Ringbauer, 2019, All rights reserved
+@ Author: Harald Ringbauer, 2021, All rights reserved
 """
 import numpy as np
 
@@ -138,14 +138,14 @@ class FiveStateTransitions(Transitions):
         gaps = np.zeros(len(r_map))  # Make new array
         gaps[1:] = r_map[1:] - r_map[:-1]  # Calculate Differences
         assert(np.min(gaps) >= 0)
-        if cm == True:
+        if cm:
             gaps = gaps / 100     # Normalize to Morgan if map in cM
          
         ### Extend the minimum gap where needed
         gaps = np.maximum(gaps, self.min_gap)
         gaps = np.minimum(gaps, self.max_gap)
 
-        if self.output == True:
+        if self.output:
             max_g = np.max(gaps)
             print(f"Minimum Genetic Map: {np.min(r_map):.4f} Morgan")
             print(f"Maximum Genetic Map: {np.max(r_map):.4f} Morgan")

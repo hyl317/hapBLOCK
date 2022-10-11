@@ -8,12 +8,16 @@ __pycache__/
 *.c
 
 # Harald
+notebooks/vignette/data/
+notebooks/vignette/output/
 data/
 output/
 figs/
 cluster/prep_hdf5_ali/logs/
 c/
 notebooks/simulate/multirun/logs/
+package/dist/
+
 #
 # Distribution / packaging
 .Python
