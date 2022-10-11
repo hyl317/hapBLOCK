@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np
 import h5py as h5py
+from matplotlib.patches import Rectangle
+
 
 from matplotlib import rcParams
 rcParams['font.family'] = 'sans-serif'   # Set the default
@@ -156,13 +158,14 @@ def plot_posterior_7States(basepath, start=-1, end=-1, prefix="", simplify=True)
     plt.xlabel('Genomic Position')
     plt.ylabel('Posterior')
     plt.legend(loc='upper right', fontsize='xx-small')
+
     if len(prefix) == 0:
         plt.savefig(f'{basepath}/posterior.png', dpi=300)
     else:
         plt.savefig(f'{basepath}/posterior.{prefix}.png', dpi=300)
     plt.clf()
     
-def plot_posterior_7States_plusGeno(basepath, start=-1, end=-1, iids=[], path2hdf5="", ch=1, prefix=""):
+def plot_posterior_7States_plusGeno(basepath, start=-1, end=-1, iids=[], truth=None, path2hdf5="", ch=1, prefix="", outFolder=""):
     # I assume the two files, map.npy and posterior.npy, reside in basepath
     r_map = np.load(f'{basepath}/map.npy', 'r')
     r_map = 100*r_map # cM is more intuitive for me
@@ -190,9 +193,19 @@ def plot_posterior_7States_plusGeno(basepath, start=-1, end=-1, iids=[], path2hd
     index = np.logical_or(np.logical_and(gt1 == 0, gt2 == 2), np.logical_and(gt1 == 2, gt2 == 0))
     plt.scatter(map[index], [1.1]*np.sum(index), marker='o', color='red', label='oppo homo', s=0.5, alpha=0.3) 
 
+    # plot truth IBD region if provided
+    if truth:
+        print('plot IBD new version')
+        plt.hlines(y=1.15, xmin=truth[0], xmax=truth[1], 
+                        colors="blue", linewidth=6)
+
+
+
     plt.xlabel('Genomic Position')
     plt.ylabel('Posterior')
     plt.legend(loc='upper right', fontsize='xx-small')
+    if len(outFolder) > 0:
+        basepath = outFolder
     if len(prefix) == 0:
         plt.savefig(f'{basepath}/posterior.png', dpi=300)
         plt.savefig(f'{basepath}/posterior.pdf', dpi=300)

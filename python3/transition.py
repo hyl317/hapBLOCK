@@ -125,6 +125,7 @@ class FiveStateTransitions(Transitions):
         res = np.einsum('...ik, ...k, ...kj ->...ij', evec, d, evec_r)
         # Make sure that all transition rates are valuable
         assert(0 <= np.min(res))
+        
         return res
     
     def rmap_to_gaps(self, r_map=[], cm=False):
@@ -166,6 +167,21 @@ class SevenStateTransitions(FiveStateTransitions):
     min_gap=1e-10 # Minimum Map Gap between two loci [Morgan]
     max_gap=0.05  # Maximum Map Gap between two loci [Morgan]
 
+    def exponentiate_r(self, rates, rec_v):
+        """Calculates exponentiation of the rates matrix with rec_v
+        rates: 2D Matrix of transitions
+        rec_v: Array of length l"""
+        eva, evec = np.linalg.eig(rates)  # Do the Eigenvalue Decomposition
+        assert(np.max(eva) <= 1)   # Sanity Check whether rate Matrix
+        evec_r = np.linalg.inv(evec)    # Do the Inversion
+        # Create vector of the exponentiated diagonals
+        d = np.exp(rec_v[:, None] * eva)
+        # Use some Einstein Sum Convention Fun (C Speed):
+        res = np.einsum('...ik, ...k, ...kj ->...ij', evec, d, evec_r)
+        res[res < 1e-16] = 0.0
+        
+        return res
+
     def calc_transition_rate(self):
         """Return Transition Rate Matrix [k,k] to exponate.
         n: Number of symetric IBD states. Usually four (2x2 copying possibilities)
@@ -178,8 +194,8 @@ class SevenStateTransitions(FiveStateTransitions):
         t_mat[0, 5:7] = 1e-6 # jumping into any IBD2 state from IBD0
         t_mat[1:5, 1:5] = self.ibd_jump / 4  # Jumping between IBD1 State
         t_mat[5:7, 5:7] = self.ibd_jump / 2  # Jumping between IBD2 State
-        t_mat[1:5, 5:7] = self.ibd_out / 2 # jumping from IBD1 to IBD2 State
-        t_mat[5:7, 1:5] = self.ibd_out / 4 # jumping from IBD2 to IBD1 state
+        t_mat[1:5, 5:7] = 0.01 # jumping from IBD1 to IBD2 State
+        t_mat[5:7, 1:5] = 200 # jumping from IBD2 to IBD1 state
 
         # Do the Diagonal (do the usual model - for inf. substract 1)
         di = np.diag_indices(np.shape(t_mat)[0])

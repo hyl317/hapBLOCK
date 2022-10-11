@@ -76,12 +76,12 @@ class HMM_Full(object):
         if full:
             post, fwd, bwd, tot_ll = self.fwd_bwd(e_mat, t_mat, in_val = self.in_val, 
                                                   full=full, output=self.output) 
-            self.p_obj.call_roh(r_vec, post)
+            #self.p_obj.call_roh(r_vec, post)
             return post, r_vec, fwd, bwd, tot_ll
         else:
             post = self.fwd_bwd(e_mat, t_mat, in_val = self.in_val, 
                                 full=full, output=self.output)
-            self.p_obj.call_roh(r_vec, post)
+            #self.p_obj.call_roh(r_vec, post)
             return post, r_vec  
     
     ##################################################

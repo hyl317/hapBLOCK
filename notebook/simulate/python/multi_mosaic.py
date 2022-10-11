@@ -9,7 +9,7 @@ import h5py                             # For Processing HDF5s
 import numpy as np
 import pandas as pd
 import os                               # To delete File
-from python.create_mosaic import Mosaic_1000G  # custom import
+from create_mosaic import Mosaic_1000G  # custom import
 
 class Mosaic_1000G_Multi(object):
     """Class for Preparing Multiple 1000G Mosaics. And Saving them.
@@ -279,7 +279,8 @@ def multi_run_lengths(base_path="./Simulated/1000G_Mosaic/TSI/", pop_list=["TSI"
     for l in lengths:
         t.ibd_lengths = np.ones(n_blocks) * 0.01 * l  # Set the Lengths [in Morgan]
         # Where to save the new HDF5 to
-        t.save_path = base_path + "ch" + str(t.ch) + "_" + str(int(l)) + "cm/"
+        # t.save_path = base_path + "ch" + str(t.ch) + "_" + str(int(l)) + "cm/"
+        t.save_path = base_path + "ch" + str(t.ch) + "_" + str(round(l,1)) + "cm/"
         t.load_m_object()
         t.create_individuals()
 

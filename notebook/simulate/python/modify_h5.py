@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import socket
 import os
+import random
 
 
 class ModifyHDF5Genotypes(object):
@@ -129,7 +130,7 @@ class ModifyHDF5Genotypes(object):
             
     def downsample_gt(self, frac=0.9, cty=0.99, shuffle_cm=0, error=0,
                       ad=True, gp=False, mult_alt=False, 
-                      gt_type="int8", compression="gzip"):
+                      gt_type="int8", simulated_error=None, compression="gzip"):
         """Downsample the HDF5 to fewer reads.
         Update also the recombination and position map if needed to remove missing values
         frac: To what fraction of markers one downsamples
@@ -137,10 +138,17 @@ class ModifyHDF5Genotypes(object):
         cty: Certainty of Genotype Probabilities
         error: If >0: Fraction of genotypes to shuffle (at random)
         shuffle_cm: If >0 shuffle cM with random exp. waiting times (shuffle_cm mean)
-        mult_alt: Whether there are multiple alternative Allelels in the original HDF5"""
+        mult_alt: Whether there are multiple alternative Allelels in the original HDF5
+        simulated_error: A dictionary storing empirical imputation error. If this is provided,
+        then frac and error will be ignored."""
         f = self.f
         gt = f["calldata/GT"][:] # Load everything in 1 go
         r_map = f["variants/MAP"][:]
+        bps = f["variants/POS"][:]
+
+        if simulated_error:
+            frac = 1
+            error = 0
         
         ### Downsample
         l,n,_ = np.shape(gt)
@@ -166,8 +174,10 @@ class ModifyHDF5Genotypes(object):
         else:
             ad_new = np.zeros(np.shape(gt_new), dtype="int8")
             
-        if gp:
-            gp = gp_from_gts(gt_new, cty=cty)  
+        if gp and not simulated_error:
+            gp = gp_from_gts(gt_new, cty=cty)
+        elif gp and simulated_error:
+            gt_new, gp = gp_from_empirical(gt_new, bps, simulated_error)
         else:
             gp = []
         
@@ -333,7 +343,7 @@ def pseudo_haploid(gt):
 def gp_from_gts(gts, cty=0.99):
     """Create GP [l,k,3] from
     genotypes [l,k,2], with prob.
-    of genotype set to 1"""
+    of genotype set to cty"""
     gs = np.sum(gts, axis=2)
     l, k = np.shape(gs)
     gp = 0.5 * (1 - cty * np.ones((l,k,3), dtype="f")) # 0.5 because 2 alternative allels
@@ -342,6 +352,35 @@ def gp_from_gts(gts, cty=0.99):
     gp[gs==2,2]=cty
     #(np.sum(gp, axis=2)==1).all()
     return gp
+
+def gp_from_empirical(gts, bps, simulated_error, cty=0.99):
+    """Create GP [l,k,3] from
+    genotypes [l,k,2], with prob.
+    of genotype set to empirical error"""
+    gs = np.sum(gts, axis=2)
+    l, k = np.shape(gs)
+    assert(l == len(bps))
+    gp = np.zeros((l, k, 3))
+    for i, bp in enumerate(bps):
+        for j in range(k):
+            dosage_groundtruth = gs[i,j]
+            # no empirical data available, use the simple model
+            if len(simulated_error[bp][dosage_groundtruth]) == 0:
+                gp[i,j,:] = 0.5*(1 - cty)
+                gp[i,j,dosage_groundtruth] = cty
+            else:
+                gp_err = random.choice(simulated_error[bp][dosage_groundtruth])
+                gp[i,j,:] = gp_err
+                gt_err = np.argmax(gp_err)
+                if gt_err != dosage_groundtruth:
+                    print(f'GP is switched from {dosage_groundtruth} to {gt_err} according to empriical error at {bp}')
+                    if gt_err == 0 or gt_err == 2:
+                        gts[i,j] = [int(gt_err/2), int(gt_err/2)]
+                    else:
+                        gts[i,j] = random.choice([[0,1], [1,0]])
+    return gts, gp
+
+
 
 def shuffle_haplos(gts, rec, scale_cm=0.4):
     """Shuffle genotypes with random waiting times 
