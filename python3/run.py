@@ -37,7 +37,7 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
     iids = np.array(iids) # For better props when indexing
     assert(len(iids)==2) # Sanity Check of Input IIDs
 
-    e_model = "haploid_gl" if not IBD2 else "IBD2"
+    e_model = "haploid_gl2" if not IBD2 else "IBD2"
     h_model = "FiveStateScaled" if not IBD2 else "SevenStateScaled"
     t_model = "standard" if not IBD2 else "IBD2"
     p_model = "hapROH" if not IBD2 else "IBD2"
@@ -49,7 +49,7 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
     h.l_obj.set_params(iids=iids, ch=ch, p_col=p_col)
 
     if len(folder_out)>0:
-        folder_out = h.prepare_path(folder_out, iid=iids, ch=ch, prefix_out=prefix_out, logfile=logfile)    
+        folder_out = h.prepare_path(folder_out, ch=ch, prefix_out=prefix_out, logfile=logfile)    
 
     h.p_obj.set_params(ch=ch, min_cm1=min_cm1, min_cm2=min_cm2, cutoff_post=cutoff_post, max_gap=max_gap, snp_cm=snp_cm, folder=folder_out, save=save)
     #post, r_vec, fwd, bwd, tot_ll = h.run_fwd_bwd()
@@ -123,7 +123,7 @@ def hapBLOCK_all(folder_in=None, iids=[], chs=range(1,23), folder_out="", output
     Run hapBLOCK on all pairs listed in $iids. If $iids is empty, then run hapBLOCK on all pairs in the hdf5 input.
     """
     if len(iids) == 0:
-        with h5py.File(f'{folder_in}1.h5', 'r') as f:
+        with h5py.File(f'{folder_in}{chs[0]}.h5', 'r') as f:
             iids = f['samples'][:].astype('str')
     
     iids_dedup = set(iids)

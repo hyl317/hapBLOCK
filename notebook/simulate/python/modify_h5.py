@@ -353,7 +353,7 @@ def gp_from_gts(gts, cty=0.99):
     #(np.sum(gp, axis=2)==1).all()
     return gp
 
-def gp_from_empirical(gts, bps, simulated_error, cty=0.99):
+def gp_from_empirical(gts, bps, simulated_error, cty=0.99, verbose=False):
     """Create GP [l,k,3] from
     genotypes [l,k,2], with prob.
     of genotype set to empirical error"""
@@ -361,23 +361,35 @@ def gp_from_empirical(gts, bps, simulated_error, cty=0.99):
     l, k = np.shape(gs)
     assert(l == len(bps))
     gp = np.zeros((l, k, 3))
+    count_err_impute = 0
+    count_err_hard = 0
     for i, bp in enumerate(bps):
         for j in range(k):
             dosage_groundtruth = gs[i,j]
             # no empirical data available, use the simple model
             if len(simulated_error[bp][dosage_groundtruth]) == 0:
+                gt1, gt2 = gts[i,j]
+                gt1_hat = (gt1 + np.random.rand()<0.01)%2
+                gt2_hat = (gt2 + np.random.rand()<0.01)%2
+                if gt1 != gt1_hat or gt2 != gt2_hat:
+                    count_err_hard += 1
+                gts[i,j] = [gt1_hat, gt2_hat]
                 gp[i,j,:] = 0.5*(1 - cty)
-                gp[i,j,dosage_groundtruth] = cty
+                gp[i,j,gt1_hat + gt2_hat] = cty
             else:
                 gp_err = random.choice(simulated_error[bp][dosage_groundtruth])
                 gp[i,j,:] = gp_err
                 gt_err = np.argmax(gp_err)
                 if gt_err != dosage_groundtruth:
-                    print(f'GP is switched from {dosage_groundtruth} to {gt_err} according to empriical error at {bp}')
+                    count_err_impute += 1
+                    if verbose:
+                        print(f'GP is switched from {dosage_groundtruth} to {gt_err} according to empriical error at {bp}')
                     if gt_err == 0 or gt_err == 2:
                         gts[i,j] = [int(gt_err/2), int(gt_err/2)]
                     else:
                         gts[i,j] = random.choice([[0,1], [1,0]])
+    print(f'{count_err_impute/k} error added per sample to simulate the effect of low coverage imputation...', flush=True)
+    print(f'{count_err_hard/k} error added per sample for sites not in the imputation dictionary...', flush=True)
     return gts, gp
 
 
