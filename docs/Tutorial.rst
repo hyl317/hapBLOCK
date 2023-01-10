@@ -8,8 +8,8 @@ Preparing Input (VCF -> HDF5)
 
 Importantly, the input VCF file should have the following two fields, which are the key ingredients of ``ancIBD``.
 
-*GT: Diploid Genotype (the most likely imputed diploid genotype)
-*GP: Genotype probabilities for each of the three possible diploid genotypes
+* GT: Diploid Genotype (the most likely imputed diploid genotype)
+* GP: Genotype probabilities for each of the three possible diploid genotypes
 
 You can then use the function :meth:`ancIBD.IO.prepare_h5 import vcf_to_1240K_hdf` make the input format transformation.
 
