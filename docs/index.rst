@@ -9,6 +9,7 @@ Welcome to the Documentation of ancIBD
    Install
    Tutorial
    FAQ
+   plot_IBD
 
 
 Indices and tables
