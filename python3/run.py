@@ -24,7 +24,7 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
                    ch=2, folder_out="", output=False, prefix_out="", logfile=False,
                    l_model="hdf5", IBD2=False, p_col="variants/AF_ALL", 
                    ibd_in=1, ibd_out=10, ibd_jump=500, min_cm1=6, min_cm2=2,
-                   cutoff_post=0.99, max_gap=0.0075, snp_cm=0, save=0):
+                   cutoff_post=0.99, max_gap=0.0075, snp_cm=0, maf=0.0, save=0):
     """Run IBD for pair of Individuals.
     folder_in: hdf5 path up to chromosome.
     iids: List of IIDs to compare [length 2]
@@ -46,17 +46,15 @@ def hapBLOCK_chrom(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
                      e_model=e_model, h_model = h_model, p_model=p_model,
                      output=output, load=True)
     h.t_obj.set_params(ibd_in = ibd_in, ibd_out = ibd_out, ibd_jump = ibd_jump)
-    h.l_obj.set_params(iids=iids, ch=ch, p_col=p_col)
+    h.l_obj.set_params(iids=iids, ch=ch, p_col=p_col, maf=maf)
 
     if len(folder_out)>0:
         folder_out = h.prepare_path(folder_out, ch=ch, prefix_out=prefix_out, logfile=logfile)    
 
     h.p_obj.set_params(ch=ch, min_cm1=min_cm1, min_cm2=min_cm2, cutoff_post=cutoff_post, max_gap=max_gap, snp_cm=snp_cm, folder=folder_out, save=save)
     #post, r_vec, fwd, bwd, tot_ll = h.run_fwd_bwd()
-    post, r_vec =  h.run_fwd_bwd(full=False)
+    post, r_vec, bp_vec =  h.run_fwd_bwd(full=False)
 
-    f = h5py.File(f'{folder_in}{ch}.h5')
-    bp_vec = f['variants/POS'][:]
     assert(len(r_vec) == len(bp_vec))
 
     df_ibd, _, _ = h.p_obj.call_roh(r_vec, bp_vec, post, iid1=iids[0], iid2=iids[1])
@@ -94,13 +92,13 @@ def hapBLOCK_pair(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
                    chs=range(1,23), folder_out="", output=False, prefix_out="", logfile=False,
                    l_model="hdf5", IBD2=False, p_col="variants/AF_ALL", 
                    ibd_in=1, ibd_out=10, ibd_jump=500, min_cm1=6, min_cm2=2, 
-                   cutoff_post=0.99, max_gap=0.0075, snp_cm=0, save=0):
+                   cutoff_post=0.99, max_gap=0.0075, snp_cm=0, maf=0.0, save=0):
     # running time on each chromosome is minimal, so I don't think there is any need to parallelize across chromosomes.
     # it makes more sense to only parallize across pairs
     assert(len(iids) == 2)
     dfs = []
     for ch in chs:
-        df, *_ = hapBLOCK_chrom(folder_in, iids, ch, folder_out, output, prefix_out, logfile, l_model, IBD2, p_col, ibd_in, ibd_out, ibd_jump, min_cm1, min_cm2, cutoff_post, max_gap, snp_cm, save)
+        df, *_ = hapBLOCK_chrom(folder_in, iids, ch, folder_out, output, prefix_out, logfile, l_model, IBD2, p_col, ibd_in, ibd_out, ibd_jump, min_cm1, min_cm2, cutoff_post, max_gap, snp_cm, maf, save)
         dfs.append(df)
     path_ibd = os.path.join(folder_out, f"{min(iids[0], iids[1])}_{max(iids[0], iids[1])}_ibd.tsv")
     df = pd.concat(dfs, ignore_index=True)
@@ -118,7 +116,7 @@ def hapBLOCK_pair(folder_in="./data/hdf5/1240k_v43/ch", iids = ["", ""],
 
 def hapBLOCK_all(folder_in=None, iids=[], chs=range(1,23), folder_out="", output=False, prefix_out="", logfile=False,
                     l_model='hdf5', IBD2=True, p_col='variants/AF_ALL', ibd_in=1, ibd_out=10, ibd_jump=500, min_cm1=6, min_cm2=2,
-                    cutoff_post=0.99, max_gap=0.0075, snp_cm=0, save=3, nprocesses=4):
+                    cutoff_post=0.99, max_gap=0.0075, snp_cm=0, maf=0.0, save=3, nprocesses=4):
     """
     Run hapBLOCK on all pairs listed in $iids. If $iids is empty, then run hapBLOCK on all pairs in the hdf5 input.
     """
@@ -136,7 +134,7 @@ def hapBLOCK_all(folder_in=None, iids=[], chs=range(1,23), folder_out="", output
                     output, prefix_out, logfile,
                    l_model, IBD2, p_col, 
                    ibd_in, ibd_out, ibd_jump, min_cm1, min_cm2, 
-                   cutoff_post, max_gap, snp_cm, save] for id1, id2 in it.combinations(iids_dedup, 2)]
+                   cutoff_post, max_gap, snp_cm, maf, save] for id1, id2 in it.combinations(iids_dedup, 2)]
     
     # now running everything in parallel
     multi_run(hapBLOCK_pair, prms, processes=nprocesses)

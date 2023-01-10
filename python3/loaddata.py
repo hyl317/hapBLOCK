@@ -154,6 +154,7 @@ class LoadHDF5Multi(LoadHDF5):
     ch = 3   # Which chromosome to load
     min_error = 1e-3 # Minimum Probability of genotyping error  
     p_col = "" # The hdf5 column with der. all freqs. If given, use the field
+    maf = 0.0
     # If "default" use p=0.5 everywhere
     # default value for p_col in my hdf5s: variants/AF_ALL
     
@@ -188,8 +189,8 @@ class LoadHDF5Multi(LoadHDF5):
             else:
                 p = self.get_p(hts)  # Calculate Mean allele frequency from subset
 
-            tokeep = np.where(np.logical_and(p >= 0.0, p <= 1))[0]
-            #print(f'keeping {len(tokeep)} out of {len(p)} SNPs that pass MAF >= 0.0')
+            tokeep = np.where(np.logical_and(p >= self.maf, p <= 1 - self.maf))[0]
+            print(f'keeping {len(tokeep)} out of {len(p)} SNPs that pass MAF >= {self.maf}')
             p = p[tokeep]
 
             m = self.return_map(f)[tokeep]
@@ -197,9 +198,11 @@ class LoadHDF5Multi(LoadHDF5):
             sort = np.argsort(idcs)   # Get the sorting Indices [has to go low to high]
             samples = self.iids[sort] # Get them in sorted order
             hts = self.get_haplo_prob(f, idcs[sort])[:, tokeep]
+            bp_vec = f['variants/POS'][:]
+            bp_vec = bp_vec[tokeep]
         
         self.check_valid_data(hts, p, m)
-        return hts, p, m, samples
+        return hts, p, m, samples, bp_vec
     
     def get_p(self, htsl):
         """Get Allele frequency from haplotype probabilities.
