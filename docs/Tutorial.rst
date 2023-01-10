@@ -13,10 +13,11 @@ Importantly, the input VCF file should have the following two fields, which are 
 
 You can then use the function :meth:`ancIBD.IO.prepare_h5.vcf_to_1240K_hdf` make the input format transformation. 
 
-Below you find the function call for a single chromosome. You can write a loop, or also use an array job to run this function on a cluster and parallelize over all chromosomes.
+Below you will find the function call for a single chromosome. You can write a loop, or also use an array job to run this function on a cluster and parallelize over all chromosomes.
 For large datasets, this step could take some time, so parallelization over chromosomes is recommended.
 
 .. code-block:: python
+
     ch = 22
     base_path = f"/n/groups/reich/hringbauer/git/hapBLOCK"
     vcf_to_1240K_hdf(in_vcf_path = f"./data/vcf.raw/example_hazelton_chr{ch}.vcf",
