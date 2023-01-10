@@ -32,7 +32,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
 ]
-autoapi_dirs = ["../package/hapsburg"]  # location to parse for API reference
+autoapi_dirs = ["../package/ancIBD"]  # location to parse for API reference
 html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain templates here, relative to this directory.
