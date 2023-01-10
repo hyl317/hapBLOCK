@@ -7,9 +7,10 @@ Welcome to the Documentation of ancIBD
 
    Intro
    Install
-   Tutorial
-   FAQ
+   create_hdf5_from_vcf
+   run_ancIBD
    plot_IBD
+   FAQ
 
 
 Indices and tables
