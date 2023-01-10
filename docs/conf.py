@@ -31,6 +31,7 @@ extensions = [
     "autoapi.extension",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    'nbsphinx'
 ]
 autoapi_dirs = ["../package/ancIBD"]  # location to parse for API reference
 html_theme = "sphinx_rtd_theme"

@@ -92,3 +92,17 @@ The function also does post-processing of trustworthy IBD blocks. Most important
 
 Visualizing Inferred IBD
 **************************
+
+Visualizing inferred IBD is a very good sanity check to see if everything works as expected. We can check the results using the function :meth:`ancIBD.run.run_plot_pair`. The value of this plotting function cannot be overstressed - it allows one to manually inspect the data behind an IBD call. Importantly, it visualizes the genomic distribution of opposing homozygotes. This are markers where both indivdiuals have homozygote for a different allele - and those markers rule out being in IBD. Observing long gaps without such markers is a strong signal for IBD - and is implicitly used by the IBD caller.
+
+In the plot below, the blue bars on top of the plot are the inferred IBD. The maroon line is the posterior. The dots on top or the bottom visualize an opposing homozygote (up: yes, down: no). Only SNPs where both individuals have Genotype Probability > 0.99 for the maximum likelihood genotype are visualized.
+
+.. code-block:: python
+
+    from ancIBD.run import run_plot_pair
+    iids = ["I12439", "I12440"]	
+
+    run_plot_pair(iids=iids, ch=5, plot=True, xlim=[],
+              path_h5 = "./data/hdf5/example_hazelton_chr" ,
+              min_cm=6, p_col='variants/AF_ALL', ms=1.5,
+              path_fig="", fs_l=16, figsize=(10,3))
