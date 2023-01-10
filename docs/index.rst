@@ -1,4 +1,4 @@
-Welcome to the Documentation of hapROH and hapCon
+Welcome to the Documentation of ancIBD
 ======================================================
 
 .. toctree::

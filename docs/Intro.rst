@@ -1,7 +1,7 @@
 Overview
 ============
 
-ancIBD is a Python package for detecting Identity-by-descent(IBD) segments for low-coverage aDNA data. It takes as input imputed genotype by `GLIMPSE <https://odelaneau.github.io/GLIMPSE/glimpse1/index.html>`_.
+``ancIBD`` is a Python package for detecting Identity-by-descent(IBD) segments for low-coverage aDNA data. It takes as input imputed genotype by `GLIMPSE <https://odelaneau.github.io/GLIMPSE/glimpse1/index.html>`_.
 
 Citing
 **********
