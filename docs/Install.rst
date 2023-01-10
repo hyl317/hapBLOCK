@@ -1,7 +1,7 @@
 Installation
 ===============
 
-Our package ancIBD is on both pypi. 
+Our package ``ancIBD`` is on pypi. 
 
 To use ``pip``,
 ::
