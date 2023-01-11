@@ -3,6 +3,7 @@ Welcome to the Documentation of ancIBD
 
 .. toctree::
    :maxdepth: 2
+   :titlesonly:
    :caption: Contents:
 
    Intro
